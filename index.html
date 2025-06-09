@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calcolatore Percentuale Votanti</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            color: #00ffff;
+            overflow-x: hidden;
+        }
+
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.1;
+            background-image: 
+                linear-gradient(90deg, #00ffff 1px, transparent 1px),
+                linear-gradient(#00ffff 1px, transparent 1px);
+            background-size: 20px 20px;
+            animation: matrix-scroll 20s linear infinite;
+        }
+
+        @keyframes matrix-scroll {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(20px); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px #00ffff;
+            animation: glow-pulse 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow-pulse {
+            from { text-shadow: 0 0 20px #00ffff; }
+            to { text-shadow: 0 0 30px #00ffff, 0 0 40px #00ffff; }
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .input-panel {
+            background: rgba(0, 255, 255, 0.1);
+            border: 2px solid #00ffff;
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #00ffff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #00ffff;
+            border-radius: 8px;
+            color: #00ffff;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+            transform: scale(1.02);
+        }
+
+        .calculate-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #00ffff, #0080ff);
+            border: none;
+            border-radius: 10px;
+            color: #000;
+            font-weight: bold;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .calculate-btn:hover {
+            background: linear-gradient(45deg, #0080ff, #00ffff);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 255, 255, 0.3);
+        }
+
+        .results-panel {
+            background: rgba(255, 0, 255, 0.1);
+            border: 2px solid #ff00ff;
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.3);
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            border-left: 4px solid #ff00ff;
+        }
+
+        .result-label {
+            font-weight: bold;
+            color: #ff00ff;
+        }
+
+        .result-value {
+            font-size: 1.2em;
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .chart-panel {
+            background: rgba(0, 255, 0, 0.1);
+            border: 2px solid #00ff00;
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.3);
+        }
+
+        .chart-title {
+            text-align: center;
+            color: #00ff00;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .download-section {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .download-btn {
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #ff00ff, #00ff00);
+            border: none;
+            border-radius: 10px;
+            color: #000;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 0 10px;
+        }
+
+        .download-btn:hover {
+            background: linear-gradient(45deg, #00ff00, #ff00ff);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 0, 255, 0.3);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid, .charts-container {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
+
+        /* Effetti particolari */
+        .cyber-border {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cyber-border::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00ffff, #ff00ff, #00ff00, #ffff00);
+            z-index: -1;
+            border-radius: 15px;
+            animation: rainbow-border 3s linear infinite;
+        }
+
+        @keyframes rainbow-border {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="matrix-bg"></div>
+    
+    <div class="container">
+        <h1>🗳️ SISTEMA CALCOLO VOTANTI v2.0</h1>
+        
+        <div class="main-grid">
+            <div class="input-panel cyber-border">
+                <h2 style="color: #00ffff; margin-bottom: 20px; text-align: center;">📊 INSERIMENTO DATI</h2>
+                
+                <div class="input-group">
+                    <label for="totalMales">👨 Totale Votanti Maschi:</label>
+                    <input type="number" id="totalMales" min="0" placeholder="Inserisci numero maschi votanti">
+                </div>
+                
+                <div class="input-group">
+                    <label for="totalFemales">👩 Totale Votanti Femmine:</label>
+                    <input type="number" id="totalFemales" min="0" placeholder="Inserisci numero femmine votanti">
+                </div>
+                
+                <div class="input-group">
+                    <label for="totalEligible">🏛️ Totale Aventi Diritto al Voto:</label>
+                    <input type="number" id="totalEligible" min="0" placeholder="Inserisci totale aventi diritto">
+                </div>
+                
+                <button class="calculate-btn" onclick="calculatePercentages()">
+                    🔍 CALCOLA PERCENTUALI
+                </button>
+            </div>
+            
+            <div class="results-panel cyber-border">
+                <h2 style="color: #ff00ff; margin-bottom: 20px; text-align: center;">📈 RISULTATI ANALISI</h2>
+                
+                <div id="results" class="hidden">
+                    <div class="result-item">
+                        <span class="result-label">👨 Votanti Maschi:</span>
+                        <span class="result-value" id="maleCount">0</span>
+                    </div>
+                    
+                    <div class="result-item">
+                        <span class="result-label">👩 Votanti Femmine:</span>
+                        <span class="result-value" id="femaleCount">0</span>
+                    </div>
+                    
+                    <div class="result-item">
+                        <span class="result-label">👥 Totale Votanti:</span>
+                        <span class="result-value" id="totalVoters">0</span>
+                    </div>
+                    
+                    <div class="result-item">
+                        <span class="result-label">📊 % Maschi:</span>
+                        <span class="result-value" id="malePercentage">0%</span>
+                    </div>
+                    
+                    <div class="result-item">
+                        <span class="result-label">📊 % Femmine:</span>
+                        <span class="result-value" id="femalePercentage">0%</span>
+                    </div>
+                    
+                    <div class="result-item">
+                        <span class="result-label">🗳️ % Affluenza Totale:</span>
+                        <span class="result-value" id="turnoutPercentage">0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="charts-container hidden" id="chartsContainer">
+            <div class="chart-panel cyber-border">
+                <h3 class="chart-title">📊 Distribuzione per Genere</h3>
+                <canvas id="genderChart"></canvas>
+            </div>
+            
+            <div class="chart-panel cyber-border">
+                <h3 class="chart-title">🗳️ Affluenza vs Non Votanti</h3>
+                <canvas id="turnoutChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="download-section hidden" id="downloadSection">
+            <button class="download-btn" onclick="downloadResults()">
+                💾 SCARICA REPORT TXT
+            </button>
+            <button class="download-btn" onclick="downloadCSV()">
+                📋 SCARICA CSV
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let calculationData = {};
+        let charts = {};
+
+        function calculatePercentages() {
+            const males = parseInt(document.getElementById('totalMales').value) || 0;
+            const females = parseInt(document.getElementById('totalFemales').value) || 0;
+            const eligible = parseInt(document.getElementById('totalEligible').value) || 0;
+
+            if (males < 0 || females < 0 || eligible < 0) {
+                alert('⚠️ I valori non possono essere negativi!');
+                return;
+            }
+
+            const totalVoters = males + females;
+            
+            if (totalVoters > eligible && eligible > 0) {
+                alert('⚠️ Il numero di votanti non può superare il totale degli aventi diritto!');
+                return;
+            }
+
+            // Calcola percentuali
+            const malePercentage = totalVoters > 0 ? ((males / totalVoters) * 100).toFixed(2) : 0;
+            const femalePercentage = totalVoters > 0 ? ((females / totalVoters) * 100).toFixed(2) : 0;
+            const turnoutPercentage = eligible > 0 ? ((totalVoters / eligible) * 100).toFixed(2) : 0;
+
+            // Salva dati per export
+            calculationData = {
+                males,
+                females,
+                totalVoters,
+                eligible,
+                malePercentage,
+                femalePercentage,
+                turnoutPercentage,
+                nonVoters: eligible - totalVoters,
+                timestamp: new Date().toLocaleString('it-IT')
+            };
+
+            // Aggiorna risultati
+            document.getElementById('maleCount').textContent = males.toLocaleString('it-IT');
+            document.getElementById('femaleCount').textContent = females.toLocaleString('it-IT');
+            document.getElementById('totalVoters').textContent = totalVoters.toLocaleString('it-IT');
+            document.getElementById('malePercentage').textContent = malePercentage + '%';
+            document.getElementById('femalePercentage').textContent = femalePercentage + '%';
+            document.getElementById('turnoutPercentage').textContent = turnoutPercentage + '%';
+
+            // Mostra risultati
+            document.getElementById('results').classList.remove('hidden');
+            document.getElementById('chartsContainer').classList.remove('hidden');
+            document.getElementById('downloadSection').classList.remove('hidden');
+
+            // Crea grafici
+            createCharts();
+        }
+
+        function createCharts() {
+            // Distruggi grafici esistenti
+            Object.values(charts).forEach(chart => chart.destroy());
+
+            // Grafico distribuzione genere
+            const genderCtx = document.getElementById('genderChart').getContext('2d');
+            charts.gender = new Chart(genderCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['👨 Maschi', '👩 Femmine'],
+                    datasets: [{
+                        data: [calculationData.males, calculationData.females],
+                        backgroundColor: ['#00ffff', '#ff00ff'],
+                        borderColor: ['#00ffff', '#ff00ff'],
+                        borderWidth: 2,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#00ff00',
+                                font: { family: 'Courier New', size: 12 }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Grafico affluenza
+            const turnoutCtx = document.getElementById('turnoutChart').getContext('2d');
+            charts.turnout = new Chart(turnoutCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['🗳️ Votanti', '❌ Non Votanti'],
+                    datasets: [{
+                        data: [calculationData.totalVoters, calculationData.nonVoters],
+                        backgroundColor: ['#00ff00', '#ff0000'],
+                        borderColor: ['#00ff00', '#ff0000'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#00ff00' },
+                            grid: { color: 'rgba(0, 255, 0, 0.3)' }
+                        },
+                        x: {
+                            ticks: { color: '#00ff00' },
+                            grid: { color: 'rgba(0, 255, 0, 0.3)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function downloadResults() {
+            const data = calculationData;
+            const report = `
+═══════════════════════════════════════════════════════════════
+🗳️  REPORT ANALISI VOTANTI - SISTEMA CYBERTECH v2.0
+═══════════════════════════════════════════════════════════════
+
+📅 Data/Ora Elaborazione: ${data.timestamp}
+
+📊 DATI NUMERICI:
+─────────────────────────────────────────────────────────────
+👨 Votanti Maschi:              ${data.males.toLocaleString('it-IT')}
+👩 Votanti Femmine:             ${data.females.toLocaleString('it-IT')}
+👥 Totale Votanti:              ${data.totalVoters.toLocaleString('it-IT')}
+🏛️  Totale Aventi Diritto:      ${data.eligible.toLocaleString('it-IT')}
+❌ Non Votanti:                 ${data.nonVoters.toLocaleString('it-IT')}
+
+📈 ANALISI PERCENTUALI:
+─────────────────────────────────────────────────────────────
+📊 Percentuale Maschi:          ${data.malePercentage}%
+📊 Percentuale Femmine:         ${data.femalePercentage}%
+🗳️  Affluenza Complessiva:      ${data.turnoutPercentage}%
+❌ Percentuale Astenuti:        ${(100 - parseFloat(data.turnoutPercentage)).toFixed(2)}%
+
+💡 OSSERVAZIONI:
+─────────────────────────────────────────────────────────────
+• Distribuzione di genere tra i votanti
+• Livello di partecipazione elettorale
+• Analisi dell'affluenza al seggio
+
+═══════════════════════════════════════════════════════════════
+Report generato automaticamente dal Sistema Cybertech v2.0
+═══════════════════════════════════════════════════════════════
+            `.trim();
+
+            downloadFile(report, 'report_votanti.txt', 'text/plain');
+        }
+
+        function downloadCSV() {
+            const data = calculationData;
+            const csv = `Categoria,Valore,Percentuale
+Votanti Maschi,${data.males},${data.malePercentage}%
+Votanti Femmine,${data.females},${data.femalePercentage}%
+Totale Votanti,${data.totalVoters},${data.turnoutPercentage}%
+Aventi Diritto,${data.eligible},100%
+Non Votanti,${data.nonVoters},${(100 - parseFloat(data.turnoutPercentage)).toFixed(2)}%
+Data Elaborazione,${data.timestamp},N/A`;
+
+            downloadFile(csv, 'dati_votanti.csv', 'text/csv');
+        }
+
+        function downloadFile(content, filename, type) {
+            const blob = new Blob([content], { type: type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Calcolo automatico quando cambiano i valori
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', () => {
+                if (document.getElementById('totalMales').value && 
+                    document.getElementById('totalFemales').value && 
+                    document.getElementById('totalEligible').value) {
+                    calculatePercentages();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
